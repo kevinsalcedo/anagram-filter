@@ -8,16 +8,27 @@ import java.util.stream.Stream;
 
 public class AnagramFilter {
     public static void main(String[] args) throws Exception {
+        long startTime = System.currentTimeMillis();
+        
         List<String> commons = readFile(args[1]);
-        filterList(args[0], commons);
+        List<String> theList = readFile(args[0]);
+        Collections.shuffle(theList);
+
+        filterListOfStrings(theList, commons);
+
+        long endTime = System.currentTimeMillis();
+        System.out.println("Execution time: " + ((endTime - startTime)) + " milliseconds");
     }
 
-    // Read the common eight letter words file, and return list of them
+    // Read the words file, and return list of them
     public static List<String> readFile(String fileName) {
         List<String> thing = new ArrayList<String>();
         try (Stream<String> stream = Files.lines(Paths.get(fileName))) {
-            stream.forEach(word -> {
-                thing.add(word);
+            stream.forEach(line -> {
+                // Ignore header line if exists
+                if(!line.startsWith("WORD,ALPHA")) {
+                    thing.add(line);
+                }
             });
         } catch (Exception ex) {
             System.out.println("Error reading file: " + ex.getMessage());
@@ -25,29 +36,20 @@ public class AnagramFilter {
         return thing;
     }
 
-    // Read the anagram data file and filter it basedo n the common list
-    public static void filterList(String fileName, List<String> filter) throws Exception {
-        File output = new File(fileName.substring(0, fileName.indexOf('.')) + "-filtered.csv");
-        FileWriter writer = new FileWriter(output);
-        writer.write("WORD,ALPHA,LETTER,INDEX" + "\n");
-        try (Stream<String> stream = Files.lines(Paths.get(fileName))) {
-            stream.forEach(word -> {
-                // Get the actual word
-                String[] row = word.split(",");
-                String key = row[0];
-
-                //  Check if the common list contains the word
-                if (filter.contains(key)) {
-                    try {
-                        writer.write(word + "\n");
-                    } catch (Exception e) {
-                        System.out.println(e.getMessage());
-                    }
+    public static void filterListOfStrings(List<String> toFilter, List<String> filter) {
+        try {
+            File output = new File("random-list.csv");
+            FileWriter writer = new FileWriter(output);
+            writer.write("WORD,ALPHA,LETTER,INDEX" + "\n");
+            for(String line : toFilter) {
+                String word = line.split(",")[0];
+                if(filter.contains(word)) {
+                    writer.write(line + "\n");
                 }
-            });
-        } catch (Exception ex) {
-            System.out.println("Error reading file: " + ex.getMessage());
+            }
+            writer.close();
+        } catch(Exception e) {
+            System.out.println("error writing: " + e.getMessage());
         }
-        writer.close();
     }
 }
