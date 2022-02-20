@@ -22,11 +22,15 @@ public class Anagrammer {
         // Map<String, List<String>> words = readFile(args[0]);
         // createOutput(args[0], words);
 
-        // Create 9s
+        // // Create 9s
         List<String> words = readWordsToList("one_nines.txt");
         Map<String, List<String>> allAlphas = generateAlphagramMap("nines.txt");
         Map<String, List<String>> result = filterNines(words, allAlphas);
         createNinesOutput(result);
+
+        // Create 7s
+        words = readWordsToList("common_sevens.txt");
+        createSevensOutput(words);
 
         long endTime = System.currentTimeMillis();
         System.out.println("Execution time: " + ((endTime - startTime)) + " milliseconds");
@@ -114,7 +118,7 @@ public class Anagrammer {
             FileWriter writer = new FileWriter(output);
 
             // Write the header line
-            writer.write("WORD,ALPHAGRAM,HINTS\n");
+            writer.write("WORD;ALPHA;HINTS\n");
 
             for (Map.Entry<String, List<String>> entry : map.entrySet()) {
                 String word = entry.getKey();
@@ -123,7 +127,7 @@ public class Anagrammer {
                 String alpha = String.join("", alphaArray);
                 List<String> letters = entry.getValue();
                 int index = getRandomIndex(word, letters.size());
-                String result = word + "," + alpha.replaceFirst(letters.get(index), "") + "_,";
+                String result = "\"" + word + "\";\"" + alpha.replaceFirst(letters.get(index), "") + "_\";";
 
                 List<Integer> hints = new ArrayList<>();
                 while (hints.size() < 3) {
@@ -139,6 +143,32 @@ public class Anagrammer {
 
         } catch (Exception ex) {
             System.out.println("Error " + ex.getMessage());
+        }
+    }
+
+    public static void createSevensOutput(List<String> words) {
+        try {
+            File output = new File("sevens_with_hints.csv");
+            FileWriter writer = new FileWriter(output);
+
+            writer.write("WORD;HINTS\n");
+            for (String w : words) {
+                String result = "\"" + w + "\";";
+
+                List<Integer> hints = new ArrayList<>();
+                while (hints.size() < 3) {
+                    int randomHint = (int) Math.floor(Math.random() * w.length());
+                    if (!hints.contains(randomHint)) {
+                        hints.add(randomHint);
+                    }
+                }
+                result += hints.toString() + "\n";
+                writer.write(result);
+            }
+
+            writer.close();
+        } catch (Exception ex) {
+            System.out.println(ex.getMessage());
         }
     }
 
