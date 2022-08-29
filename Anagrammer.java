@@ -15,12 +15,8 @@ public class Anagrammer {
         // Create 7s
 
         // Create 8s
-        // if (args.length != 1) {
-        // System.out.println("Please supply an argument.");
-        // return;
-        // }
-        // Map<String, List<String>> words = readFile(args[0]);
-        // createOutput(args[0], words);
+        Map<String, List<String>> alphaMap = generateAlphagramMap("alleights.txt");
+        createEightsOutput("alleights.txt", alphaMap);
 
         // // Create 9s
         List<String> words = readWordsToList("one_nines.txt");
@@ -151,9 +147,13 @@ public class Anagrammer {
             File output = new File("sevens_with_hints.csv");
             FileWriter writer = new FileWriter(output);
 
-            writer.write("WORD;HINTS\n");
+            writer.write("WORD;ALPHA;HINTS\n");
             for (String w : words) {
-                String result = "\"" + w + "\";";
+                String result = "\"" + w + "\";\"";
+                String[] alpha = w.split("");
+                Arrays.sort(alpha);
+                String alphaStirng = String.join("", alpha);
+                result += alphaStirng + "\";";
 
                 List<Integer> hints = new ArrayList<>();
                 while (hints.size() < 3) {
@@ -187,13 +187,19 @@ public class Anagrammer {
             File output = new File(fileName.substring(0, fileName.indexOf('.')) + ".csv");
             FileWriter writer = new FileWriter(output);
             // Write the header line
-            writer.write("WORD,ALPHA,LETTER,INDEX" + "\n");
+            writer.write("WORD;ALPHA;LETTER;INDEX;HINTS" + "\n");
 
             for (Map.Entry<String, List<String>> entry : alphas.entrySet()) {
-                for (List<Triple> list : filterEights(entry.getKey(), entry.getValue()).values()) {
-                    for (Triple t : list) {
-                        writer.write(t.toJSONString() + "\n");
-                    }
+                Map<String, List<Triple>> lists = filterEights(entry.getKey(), entry.getValue());
+
+                for (List<Triple> list : lists.values()) {
+                    // No duplicate words
+                    int idx = getRandomIndex(entry.getKey(), list.size());
+                    writer.write(list.get(idx).toJSONString() + "\n");
+                    // for (Triple t : list) {
+                    // System.out.println(t.toJSONString());
+                    // writer.write(t.toJSONString() + "\n");
+                    // }
                 }
             }
             writer.close();
@@ -236,6 +242,7 @@ public class Anagrammer {
                 }
             }
         }
+
         return res;
     }
 
@@ -262,12 +269,33 @@ public class Anagrammer {
         String alphagram;
         String letter;
         int index;
+        List<Integer> hints;
 
         public Triple(String word, String alphagram) {
             this.word = word;
             this.alphagram = alphagram;
             this.index = -1;
             this.letter = "*";
+
+            // For words with only one anagram for their alphagram
+            if (this.letter.equals("*") && this.index == -1) {
+                int idx = getRandomIndex(this.word, 6) + 1;
+                this.letter = String.valueOf(word.charAt(idx));
+                this.index = idx;
+                this.alphagram = alphagram.replaceFirst(this.letter, "");
+
+                List<Integer> hints = new ArrayList<>();
+                List<String> letters = Arrays.asList(this.word.split(""));
+                while (hints.size() < 3) {
+                    int randomHint = (int) Math.floor(Math.random() * word.length());
+                    if (word.charAt(randomHint) != letters.get(index).toCharArray()[0] && !hints.contains(randomHint)
+                            && randomHint != this.index) {
+                        hints.add(randomHint);
+                    }
+                }
+                this.hints = hints;
+
+            }
         }
 
         public Triple(String word, String alphagram, String letter, int index) {
@@ -276,6 +304,36 @@ public class Anagrammer {
             this.index = index;
             this.alphagram = alphagram.replaceFirst(letter, "");
 
+            List<Integer> hints = new ArrayList<>();
+            List<String> letters = Arrays.asList(this.word.split(""));
+            while (hints.size() < 3) {
+                int randomHint = (int) Math.floor(Math.random() * word.length());
+                if (word.charAt(randomHint) != letters.get(index).toCharArray()[0] && !hints.contains(randomHint)
+                        && randomHint != this.index) {
+                    hints.add(randomHint);
+                }
+            }
+            this.hints = hints;
+
+            // For words with only one anagram for their alphagram
+            if (this.letter.equals("*") && this.index == -1) {
+                int idx = getRandomIndex(this.word, 6) + 1;
+                this.letter = String.valueOf(word.charAt(idx));
+                this.index = idx;
+                this.alphagram = alphagram.replaceFirst(this.letter, "");
+
+                hints = new ArrayList<>();
+                letters = Arrays.asList(this.word.split(""));
+                while (hints.size() < 3) {
+                    int randomHint = (int) Math.floor(Math.random() * word.length());
+                    if (word.charAt(randomHint) != letters.get(index).toCharArray()[0] && !hints.contains(randomHint)
+                            && randomHint != this.index) {
+                        hints.add(randomHint);
+                    }
+                }
+                this.hints = hints;
+            }
+
         }
 
         public String getWord() {
@@ -283,7 +341,8 @@ public class Anagrammer {
         }
 
         public String toJSONString() {
-            return this.word + "," + this.alphagram + "," + this.letter + "," + this.index;
+            return this.word + ";" + this.alphagram + ";" + this.letter + ";" + this.index + ";"
+                    + this.hints.toString();
         }
     }
 

@@ -9,7 +9,7 @@ import java.util.stream.Stream;
 public class AnagramFilter {
     public static void main(String[] args) throws Exception {
         long startTime = System.currentTimeMillis();
-        
+
         List<String> commons = readFile(args[1]);
         List<String> theList = readFile(args[0]);
         Collections.shuffle(theList);
@@ -26,7 +26,7 @@ public class AnagramFilter {
         try (Stream<String> stream = Files.lines(Paths.get(fileName))) {
             stream.forEach(line -> {
                 // Ignore header line if exists
-                if(!line.startsWith("WORD,ALPHA")) {
+                if (!line.startsWith("WORD;ALPHA")) {
                     thing.add(line);
                 }
             });
@@ -40,15 +40,15 @@ public class AnagramFilter {
         try {
             File output = new File("random-list.csv");
             FileWriter writer = new FileWriter(output);
-            writer.write("WORD,ALPHA,LETTER,INDEX" + "\n");
-            for(String line : toFilter) {
-                String word = line.split(",")[0];
-                if(filter.contains(word)) {
+            writer.write("WORD;ALPHA;LETTER;INDEX;HINTS" + "\n");
+            for (String line : toFilter) {
+                String word = line.split(";")[0];
+                if (filter.contains(word)) {
                     writer.write(line + "\n");
                 }
             }
             writer.close();
-        } catch(Exception e) {
+        } catch (Exception e) {
             System.out.println("error writing: " + e.getMessage());
         }
     }
