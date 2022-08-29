@@ -286,4 +286,33 @@ public class Anagrammer {
             return this.word + "," + this.alphagram + "," + this.letter + "," + this.index;
         }
     }
+
+    static class TripleMulti {
+        String word;
+        String alphagram;
+        String[] letters;
+        int[] indices;
+
+        public TripleMulti(String word, String alphagram) {
+            this.word = word;
+            this.alphagram = alphagram;
+            this.letters = new String[2];
+            this.indices = new int[2];
+        }
+
+        public TripleMulti(String word, String alphagram, String[] letters, int[] indices) {
+            this.word = word;
+            this.alphagram = alphagram;
+            this.letters = letters;
+            this.indices = indices;
+        }
+
+        public String getWord() {
+            return this.word;
+        }
+
+        public String toJSONString() {
+            return this.word + "," + this.alphagram + "," + this.letters.toString() + "," + this.indices.toString();
+        }
+    }
 }

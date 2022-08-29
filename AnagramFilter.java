@@ -5,7 +5,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Stream;
-
+ 
 public class AnagramFilter {
     public static void main(String[] args) throws Exception {
         long startTime = System.currentTimeMillis();
