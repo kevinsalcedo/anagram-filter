@@ -12,21 +12,21 @@ import java.util.stream.Stream;
 public class Anagrammer {
     public static void main(String[] args) throws Exception {
         long startTime = System.currentTimeMillis();
-        // Create 7s
 
         // Create 8s
-        Map<String, List<String>> alphaMap = generateAlphagramMap("alleights.txt");
-        createEightsOutput("alleights.txt", alphaMap);
+        // Map<String, List<String>> alphaMap = generateAlphagramMap("alleights.txt");
+        // createEightsOutput("alleights.txt", alphaMap);
 
         // // Create 9s
         List<String> words = readWordsToList("one_nines.txt");
+        List<String> twos = readWordsToList("twos.txt");
         Map<String, List<String>> allAlphas = generateAlphagramMap("nines.txt");
-        Map<String, List<String>> result = filterNines(words, allAlphas);
-        createNinesOutput(result);
+        Map<String, List<String>> nineToWildcardMap = filterNines(words, allAlphas);
+        createNinesOutput(nineToWildcardMap, twos);
 
         // Create 7s
-        words = readWordsToList("common_sevens.txt");
-        createSevensOutput(words);
+        // words = readWordsToList("common_sevens.txt");
+        // createSevensOutput(words);
 
         long endTime = System.currentTimeMillis();
         System.out.println("Execution time: " + ((endTime - startTime)) + " milliseconds");
@@ -108,27 +108,37 @@ public class Anagrammer {
         return result;
     }
 
-    public static void createNinesOutput(Map<String, List<String>> map) {
+    public static void createNinesOutput(Map<String, List<String>> map, List<String> twos) {
         try {
             File output = new File("nines_with_hints.csv");
             FileWriter writer = new FileWriter(output);
 
             // Write the header line
-            writer.write("WORD;ALPHA;HINTS\n");
+            writer.write("WORD;ALPHA;LETTERS;INDICES;HINTS\n");
+            // Go through each word and create an entry
 
             for (Map.Entry<String, List<String>> entry : map.entrySet()) {
+                // Get the word
                 String word = entry.getKey();
+                // Create the alphagram
                 String[] alphaArray = word.split("");
                 Arrays.sort(alphaArray);
                 String alpha = String.join("", alphaArray);
+                // Get a random letter that can be used as a wild card
                 List<String> letters = entry.getValue();
-                int index = getRandomIndex(word, letters.size());
-                String result = "\"" + word + "\";\"" + alpha.replaceFirst(letters.get(index), "") + "_\";";
-
+                int wildcardIndex = getRandomIndex(word, letters.size());
+                // Get two random indices within the word (not including first or last letters)
+                int[] givenIndices = getGivenIndices(word, wildcardIndex, twos);
+                String[] givenLetters = new String[2];
+                givenLetters[0] = Character.toString(word.charAt(givenIndices[0]));
+                givenLetters[1] = Character.toString(word.charAt(givenIndices[1]));
+                // Result to write [word];[alpha];[]
+                String result = "\"" + word + "\";\"" + alpha.replaceFirst(letters.get(wildcardIndex), "") + "_\";" +
+                    givenLetters.toString() + ";" + givenIndices.toString();
                 List<Integer> hints = new ArrayList<>();
                 while (hints.size() < 3) {
                     int randomHint = (int) Math.floor(Math.random() * word.length());
-                    if (word.charAt(randomHint) != letters.get(index).toCharArray()[0] && !hints.contains(randomHint)) {
+                    if (word.charAt(randomHint) != letters.get(wildcardIndex).toCharArray()[0] && !hints.contains(randomHint)) {
                         hints.add(randomHint);
                     }
                 }
@@ -141,6 +151,30 @@ public class Anagrammer {
             System.out.println("Error " + ex.getMessage());
         }
     }
+
+    public static int[] getGivenIndices(String word, int wildcardIndex, List<String> twos) {
+        // Get the indices for given letters
+        int[] givenIndices = new int[]{-1, -1};
+        for(int i = 0; i < givenIndices.length; i++) {
+            int index = getRandomIndex(word, word.length()-2) + 1;
+            // Make sure that index 1 != index 2 != wildcardIndex
+            while(index == wildcardIndex || index == ((i + 1) % givenIndices.length)) {
+                index = getRandomIndex(word, word.length()-2) + 1;
+            }
+        }
+
+        // Check to make sure that the given indices form a word if sequential
+        if(Math.abs(givenIndices[0] - givenIndices[1]) == 1) {
+            String givenLetters = Character.toString(word.charAt(givenIndices[0])) + Character.toString(word.charAt(givenIndices[1]));
+            // If they don't form a word, recurse
+            if(!twos.contains(givenLetters)) {
+                givenIndices = getGivenIndices(word, wildcardIndex,twos);
+            }
+        }
+
+        return givenIndices;
+    }
+
 
     public static void createSevensOutput(List<String> words) {
         try {
@@ -351,13 +385,6 @@ public class Anagrammer {
         String alphagram;
         String[] letters;
         int[] indices;
-
-        public TripleMulti(String word, String alphagram) {
-            this.word = word;
-            this.alphagram = alphagram;
-            this.letters = new String[2];
-            this.indices = new int[2];
-        }
 
         public TripleMulti(String word, String alphagram, String[] letters, int[] indices) {
             this.word = word;
